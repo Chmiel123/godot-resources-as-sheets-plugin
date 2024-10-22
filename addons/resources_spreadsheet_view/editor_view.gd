@@ -11,8 +11,6 @@ const TablesPluginSettingsClass := preload("res://addons/resources_spreadsheet_v
 @export @onready var node_columns : HBoxContainer = $"HeaderContentSplit/VBoxContainer/Columns/Columns"
 @export @onready var node_page_manager : Control = $"HeaderContentSplit/VBoxContainer/HBoxContainer3/Pages"
 @export @onready var node_class_filter : Control = $"HeaderContentSplit/VBoxContainer/Search/Search/Class"
-@export @onready var custom_sort : Button = $HeaderContentSplit/VBoxContainer/MenuStrip/CustomSort
-@export @onready var h_box_container_4: HBoxContainer = $HeaderContentSplit/VBoxContainer/HBoxContainer4
 
 @onready var _on_cell_gui_input : Callable = $"InputHandler"._on_cell_gui_input
 @onready var _selection := $"SelectionManager"
@@ -24,7 +22,6 @@ var current_path := ""
 var save_data_path : String = get_script().resource_path.get_base_dir() + "/saved_state.json"
 var sorting_by := &""
 var sorting_reverse := false
-var custom_sort_dict := {}
 
 var columns := []
 var column_types := []
@@ -55,12 +52,10 @@ func _ready():
 		for x in $"HeaderContentSplit/VBoxContainer/Search/Search".get_children():
 			if x.has_method(&"load_saved_functions"):
 				x.load_saved_functions(table_functions_dict)
-		custom_sort_dict = as_var.get("custom_sort", {})
 
 	if node_recent_paths.recent_paths.size() >= 1:
 		display_folder(node_recent_paths.recent_paths[-1], "resource_name", false, true)
 
-	h_box_container_4.visible = custom_sort.button_pressed
 
 func save_data():
 	var file = FileAccess.open(save_data_path, FileAccess.WRITE)
@@ -69,7 +64,6 @@ func save_data():
 			"recent_paths" : node_recent_paths.recent_paths,
 			"hidden_columns" : node_columns.hidden_columns,
 			"table_functions" : table_functions_dict,
-			"custom_sort" : custom_sort_dict
 		}
 	, "  "))
 
@@ -177,7 +171,7 @@ func _load_resources_from_path(path : String, sort_by : StringName, sort_reverse
 
 		else:
 			io = ResourceTablesEditFormatTres.new()
-
+	
 	io.editor_view = self
 	remembered_paths.clear()
 	rows = io.import_from_path(path, insert_row_sorted, sort_by, sort_reverse)
@@ -198,7 +192,7 @@ func _update_visible_rows(force_rebuild : bool = true):
 	while cells_left_to_free > 0:
 		node_table_root.get_child(0).free()
 		cells_left_to_free -= 1
-
+	
 	var color_rows : bool = ProjectSettings.get_setting(TablesPluginSettingsClass.PREFIX + "color_rows")
 	for i in last_row - first_row:
 		_update_row(first_row + i, color_rows)
@@ -260,48 +254,20 @@ func fill_property_data_many(resources : Array):
 
 
 func insert_row_sorted(res : Resource, loaded_rows : Array, sort_by : StringName, sort_reverse : bool):
-	if custom_sort.button_pressed:
-		if custom_sort_dict.has(current_path):
-			var order = custom_sort_dict[current_path]
-			print(order)
+	if not search_cond.is_null() and not search_cond.call(res, loaded_rows.size()):
+		return
 
-			for i_order in order.size():
-				if order[i_order] == res.resource_path:
-					if i_order == 0:
-						loaded_rows.insert(0, res)
-						print("Inserted %s at: %d" % [res.resource_path, 0])
-						return
-					else:
-						for di_order in range(i_order - 1, -1, -1):
-							for i_loaded in loaded_rows.size():
-								if loaded_rows[i_loaded].resource_path == order[di_order]:
-									if i_loaded + 1 >= loaded_rows.size():
-										loaded_rows.append(res)
-									else:
-										loaded_rows.insert(i_loaded + 1, res)
-									print("Inserted %s at: %d" % [res.resource_path, i_loaded + 1])
-									return
-		else:
-			custom_sort_dict[current_path] = []
-		loaded_rows.append(res)
-		print("Appended %s" % res.resource_path)
-		if !res.resource_path in custom_sort_dict[current_path]:
-			custom_sort_dict[current_path].append(res.resource_path)
-	else:
-		if not search_cond.is_null() and not search_cond.call(res, loaded_rows.size()):
+	if not sort_by in res or not node_class_filter.filter(res):
+		return
+
+	var sort_value = res[sort_by]
+	for i in loaded_rows.size():
+		if sort_reverse == compare_values(sort_value, loaded_rows[i][sort_by]):
+			loaded_rows.insert(i, res)
 			return
-
-		if not sort_by in res or not node_class_filter.filter(res):
-			return
-
-		var sort_value = res[sort_by]
-		for i in loaded_rows.size():
-			if sort_reverse == compare_values(sort_value, loaded_rows[i][sort_by]):
-				loaded_rows.insert(i, res)
-				return
-
-		remembered_paths[res.resource_path] = res
-		loaded_rows.append(res)
+	
+	remembered_paths[res.resource_path] = res
+	loaded_rows.append(res)
 
 
 func compare_values(a, b) -> bool:
@@ -311,10 +277,10 @@ func compare_values(a, b) -> bool:
 
 	if a is Resource:
 		return a.resource_path > b.resource_path
-
+	
 	if a is Array:
 		return a.size() > b.size()
-
+		
 	return a > b
 
 
@@ -368,7 +334,7 @@ func _update_row(row_index : int, color_rows : bool = true):
 		if columns[i] == &"resource_path":
 			column_editors[i].set_value(current_node, shortened_path)
 
-		else:
+		else:			
 			var cell_value = io.get_value(rows[row_index], columns[i])
 			if cell_value != null or column_types[i] == TYPE_OBJECT:
 				column_editors[i].set_value(current_node, cell_value)
@@ -439,7 +405,7 @@ func set_edited_cells_values(new_cell_values : Array):
 
 func rename_row(row, new_name):
 	if !has_row_names(): return
-
+		
 	io.rename_row(row, new_name)
 	refresh()
 
@@ -470,7 +436,7 @@ func get_edited_cells_values() -> Array:
 	result.resize(cells.size())
 	for i in cells.size():
 		result[i] = io.get_value(rows[_selection.get_cell_row(cells[i])], columns[column_index])
-
+	
 	return result
 
 
@@ -535,31 +501,3 @@ func _on_File_pressed():
 
 func _on_SearchProcess_pressed():
 	$"HeaderContentSplit/VBoxContainer/Search".visible = !$"HeaderContentSplit/VBoxContainer/Search".visible
-
-
-func _on_custom_sort_pressed() -> void:
-	h_box_container_4.visible = custom_sort.button_pressed
-	refresh()
-
-
-func _on_first_pressed() -> void:
-	var order = custom_sort_dict[current_path]
-	var edited_rows = _selection.get_edited_rows()
-	edited_rows.reverse()
-	for row in edited_rows:
-		var res = rows[row]
-		order.erase(res.resource_path)
-		order.insert(0, res.resource_path)
-	refresh()
-	save_data()
-
-func _on_up_pressed() -> void:
-	pass # Replace with function body.
-
-
-func _on_down_pressed() -> void:
-	pass # Replace with function body.
-
-
-func _on_last_pressed() -> void:
-	pass # Replace with function body.
