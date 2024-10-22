@@ -263,23 +263,28 @@ func insert_row_sorted(res : Resource, loaded_rows : Array, sort_by : StringName
 	if custom_sort.button_pressed:
 		if custom_sort_dict.has(current_path):
 			var order = custom_sort_dict[current_path]
+			print(order)
+
 			for i_order in order.size():
 				if order[i_order] == res.resource_path:
 					if i_order == 0:
 						loaded_rows.insert(0, res)
+						print("Inserted %s at: %d" % [res.resource_path, 0])
 						return
 					else:
-						for di_order in range(i_order, -1, -1):
+						for di_order in range(i_order - 1, -1, -1):
 							for i_loaded in loaded_rows.size():
 								if loaded_rows[i_loaded].resource_path == order[di_order]:
 									if i_loaded + 1 >= loaded_rows.size():
 										loaded_rows.append(res)
 									else:
 										loaded_rows.insert(i_loaded + 1, res)
+									print("Inserted %s at: %d" % [res.resource_path, i_loaded + 1])
 									return
 		else:
 			custom_sort_dict[current_path] = []
 		loaded_rows.append(res)
+		print("Appended %s" % res.resource_path)
 		if !res.resource_path in custom_sort_dict[current_path]:
 			custom_sort_dict[current_path].append(res.resource_path)
 	else:
@@ -540,7 +545,6 @@ func _on_custom_sort_pressed() -> void:
 func _on_first_pressed() -> void:
 	var order = custom_sort_dict[current_path]
 	var edited_rows = _selection.get_edited_rows()
-	edited_rows.sort()
 	edited_rows.reverse()
 	for row in edited_rows:
 		var res = rows[row]
@@ -550,19 +554,7 @@ func _on_first_pressed() -> void:
 	save_data()
 
 func _on_up_pressed() -> void:
-	var order = custom_sort_dict[current_path]
-	var edited_rows = _selection.get_edited_rows()
-	edited_rows.sort()
-	for row in edited_rows:
-		var res = rows[row]
-		var i = order.find(res.resource_path)
-		if i == 0:
-			return
-		order.remove_at(i)
-		order.erase(res.resource_path)
-		order.insert(i - 1, res.resource_path)
-	refresh()
-	save_data()
+	pass # Replace with function body.
 
 
 func _on_down_pressed() -> void:
