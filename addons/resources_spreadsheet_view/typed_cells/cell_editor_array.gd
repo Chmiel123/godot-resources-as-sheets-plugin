@@ -42,6 +42,9 @@ func _write_value_to_child(value, key, hint_arr : PackedStringArray, child : Lab
 
 
 func _resource_to_string(res : Resource):
+	var s := str(res)
+	if !s.begins_with("<Resource"):
+		return s
 	return res.resource_name if res.resource_name != "" else res.resource_path.get_file()
 
 
