@@ -7,7 +7,7 @@ func create_cell(caller : Control) -> Control:
 	var node : Label = load(CELL_SCENE_DIR + "basic.tscn").instantiate()
 	var color := ColorRect.new()
 	node.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	node.custom_minimum_size.x = 72
+	node.custom_minimum_size.x = 100
 	node.add_child(color)
 	color.name = "Color"
 	_resize_color_rect.call_deferred(color)
