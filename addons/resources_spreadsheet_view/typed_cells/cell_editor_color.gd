@@ -16,7 +16,7 @@ func create_cell(caller : Control) -> Control:
 
 func _resize_color_rect(rect):
 	if !is_instance_valid(rect): return  # Table refreshed twice, probably? Either way, this fix is easier
-	rect.size = Vector2(8, 0)
+	rect.size = Vector2(24, 0)
 	rect.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE, Control.PRESET_MODE_KEEP_WIDTH)
 
 
