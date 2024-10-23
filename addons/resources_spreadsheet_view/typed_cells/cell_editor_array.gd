@@ -18,7 +18,7 @@ func set_value(node : Control, value):
 	while children.size() < value.size():
 		children.append(Label.new())
 		node.get_node("Box").add_child(children[children.size() - 1])
-	
+
 	var column_hints = hint_strings_array[node.get_index() % hint_strings_array.size()]
 	for i in children.size():
 		if i >= value.size():
@@ -33,7 +33,15 @@ func _write_value_to_child(value, key, hint_arr : PackedStringArray, child : Lab
 	if value is Resource:
 		value = _resource_to_string(value)
 
-	child.text = str(value)
+	var string = str(value)
+	child.text = string
+	if "#" in string:
+		var split = string.split(" ")
+		for i in split.size():
+			if split[i].begins_with("#"):
+				child.self_modulate = Color.from_string(split[i].substr(1), Color.WHITE)
+				return
+
 	child.self_modulate = (
 		Color.WHITE * (1.0 - color_tint)
 		+
