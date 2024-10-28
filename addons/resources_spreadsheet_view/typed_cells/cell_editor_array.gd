@@ -39,7 +39,7 @@ func _write_value_to_child(value, key, hint_arr : PackedStringArray, child : Lab
 		var split = string.split(" ")
 		for i in split.size():
 			if split[i].begins_with("#"):
-				child.self_modulate = Color.from_string(split[i].substr(1), Color.WHITE)
+				child.self_modulate = Color.from_string(split[i].substr(1, 6), Color.WHITE)
 				return
 
 	child.self_modulate = (
